@@ -101,7 +101,7 @@ class Plant (UserMixin, models.Model):
 
     required_humidity = models.CharField (
         max_length=10,
-        choices=HUMIDITY_CHOICES,,
+        choices=HUMIDITY_CHOICES,
         null=False,
         blank=False,
         verbose_name="Humidity",
@@ -134,7 +134,7 @@ class Plant (UserMixin, models.Model):
     )
 
     dificulty = models.PositiveIntegerField (
-        choices = DIFICULTY_CHOICES,
+        choices = DIFFICULTY_CHOICES,
         default=1,
         null=False,
         blank=True,
@@ -143,7 +143,7 @@ class Plant (UserMixin, models.Model):
 
     )
 
-    DIFICULTY_CHOICES = [
+    DIFFICULTY_CHOICES = [
         (1, "Low"),
         (2, "Medium-low"),
         (3, "Medium"),
@@ -167,9 +167,13 @@ class Room(UserMixin, models.Model):
         help_text="",
     )
 
+    ROOMEXPOSURE_CHOICES = [ ("dark", "Dark room"),
+        ("shade","Shady room"),
+        ("partsun", "Partsunny room"),
+        ("fullsun", "Sunny room"),
+        ]
 
-
-      room_exposure = models.CharField (
+    room_exposure = models.CharField (
         max_length = 20,
         choices = ROOMEXPOSURE_CHOICES,
         null=False,
@@ -177,11 +181,12 @@ class Room(UserMixin, models.Model):
         verbose_name="Room exposure",
         help_text="",
     )
-    ROOMEXPOSURE_CHOICES = [ ("dark", "Dark room"),
-    ("shade","Shady room"),
-    ("partsun", "Partsunny room"),
-    ("fullsun", "Sunny room"),
-    ]
+    ROOMTEMP_CHOICES = [ ("cold", "Cold"),
+        ("medium","Medium"),
+        ("warm", "Warm"),
+        ]
+        # Plant.TEMPERATURE_CHOICES
+
     room_temperature = models.CharField (
         max_length = 20,
         choices = ROOMTEMP_CHOICES,
@@ -190,17 +195,14 @@ class Room(UserMixin, models.Model):
         verbose_name = "Room temperature",
         help_text = "",
     )
-    ROOMTEMP_CHOICES = [ ("cold", "Cold"),
-    ("medium","Medium"),
-    ("warm", "Warm"),
-    ]
 
 
-    aeration = models.BooleanField(
+
+    drafty = models.BooleanField(
         default=False,
         null=False,
         blank=False,
-        verbose_name = "Aeration"
+        verbose_name = "Drafty"
     )
 
 
@@ -222,7 +224,7 @@ class UserPlant(Plant,models.Model):
         help_text="",
     )
     plant = models.ForeignKey (
-        Room,
+        Plant,
         on_delete=models.PROTECT,
         null=False,
         blank=False,
@@ -231,20 +233,21 @@ class UserPlant(Plant,models.Model):
     )
 
 
-    description=models.TextField(
+    description=models.CharField(
+        max_length = 200,
         blank=True,
         verbose_name = "Description",
         help_text="",
         )
 
-     watering_date = models.DateField(
+    watering_date = models.DateField(
         null=False,
         blank=False,
         verbose_name="Watering date",
         help_text="",
         )
 
-        fertilizing_date = models.DateField(
+    fertilizing_date = models.DateField(
         null=False,
         blank=False,
         verbose_name="Fertilizing date",
