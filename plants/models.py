@@ -2,8 +2,8 @@ from django.conf import settings
 from django.db import models
 
 
-class UserMixin(models.Models):
-    user = models.ForeignKey (
+class UserMixin(models.Model):
+    user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
         null=False,
@@ -17,19 +17,18 @@ class UserMixin(models.Models):
     # Nie jest to faktyczny user - tylko abstrakcyjny,
     # django próbowałoby stworzyc tabelke user
 
-class Category(UserMixin, models.Model):
-    name = models.CharField(
-    max_length = 50,
-    null=False,
-    blank = False,
-    verbose_name="Name",
-    help_text="",
-    )
-    # sposob uzycia tekstu lukasz-jemiol
-    slug = models.SlugField()
 
-    description = models.CharField (
-        max_length = 150,
+class NameDescriptionMixin (models.Model):
+
+    name = models.CharField(
+        max_length=50,
+        null=False,
+        blank=False,
+        verbose_name="Name",
+        help_text="",
+    )
+    description = models.CharField(
+        max_length=150,
         null=False,
         blank=True,
         # Opcja Django
@@ -38,29 +37,35 @@ class Category(UserMixin, models.Model):
         help_text="",
     )
 
+    class Meta:
+        abstract = True
+
+
+class ImageMixin(models.Model):
     image_url = models.URLField(
         verbose_name="Image URL",
         help_text="",
     )
-    # user = models.ForeignKey (
-    #     settings.AUTH_USER_MODEL,
-    #     on_delete=models.PROTECT,
-    #     null=False,
-    #     blank=False,
-    #     verbose_name="User",
-    #     help_text="",
-    # )----- userMixin
+
+    class Meta:
+        abstract = True
 
 
-class Plant (UserMixin, models.Model):
-    name = models.CharField(
-        max_length = 50,
-        null=False,
-        blank = False,
-        verbose_name="Name",
-        help_text="",
-    )
-    category = models.ForeignKey (
+class Category (ImageMixin, NameDescriptionMixin, UserMixin, models.Model):
+    # name
+    # sposob uzycia tekstu lukasz-jemiol
+    slug = models.SlugField(unique=True)
+
+    # description
+
+    # image_url
+    # user
+
+
+class Plant (NameDescriptionMixin, UserMixin, models.Model):
+    # name
+    category = models.ForeignKey(
+
         Category,
         on_delete=models.PROTECT,
         null=False,
@@ -72,19 +77,26 @@ class Plant (UserMixin, models.Model):
     watering_interval = models.PositiveIntegerField(
         null=False,
         blank=False,
-        verbose_name = "Watering interval",
-        help_text = "In seconds",
-        # zeby szybciej testowac funkcjon
-    )
-    fertilizing_interval = models.PositiveIntegerField(
-        null=False,
-        blank=False,
-        verbose_name = "Fertilizing interval",
-        help_text = "In seconds",
+        verbose_name="Watering interval",
+        help_text="In seconds",
         # zeby szybciej testowac funkcjon
     )
 
-    required_exposure = models.CharField (
+    fertilizing_interval = models.PositiveIntegerField(
+        null=False,
+        blank=False,
+        verbose_name="Fertilizing interval",
+        help_text="In seconds",
+        # zeby szybciej testowac funkcjon
+    )
+
+    EXPOSURE_CHOICES = [
+        ("dark", "Dark"),
+        ("shade", "Shade"),
+        ("partsun", "Part sun"),
+        ("fullsun", "Full sun"),
+        ]
+    required_exposure = models.CharField(
         max_length=10,
         choices=EXPOSURE_CHOICES,
         null=False,
@@ -93,13 +105,13 @@ class Plant (UserMixin, models.Model):
         help_text="",
     )
 #   EXPOSURE_CHOICES = [ ("elem", "opis tego elem")] choises
-    EXPOSURE_CHOICES = [ ("dark", "Dark"),
-    ("shade","Shade"),
-    ("partsun", "Part sun"),
-    ("fullsun", "Full sun"),
-    ]
 
-    required_humidity = models.CharField (
+    HUMIDITY_CHOICES = [
+        ("low", "Low"),
+        ("medium", "Medium"),
+        ("high", "High"),
+    ]
+    required_humidity = models.CharField(
         max_length=10,
         choices=HUMIDITY_CHOICES,
         null=False,
@@ -107,11 +119,12 @@ class Plant (UserMixin, models.Model):
         verbose_name="Humidity",
         help_text="",
     )
-    HUMIDITY_CHOICES = [ ("low", "Low"),
-    ("medium","Medium"),
-    ("high", "High"),
+    TEMPERATURE_CHOICES = [
+        ("cold", "Cold"),
+        ("medium", "Medium"),
+        ("warm", "Warm"),
     ]
-    required_temperature = models.CharField (
+    required_temperature = models.CharField(
         max_length=10,
         choices=TEMPERATURE_CHOICES,
         null=False,
@@ -119,10 +132,6 @@ class Plant (UserMixin, models.Model):
         verbose_name="Temperature",
         help_text="",
     )
-    TEMPERATURE_CHOICES = [ ("cold", "Cold"),
-    ("medium","Medium"),
-    ("warm", "Warm"),
-    ]
 
     blooming = models.BooleanField(
         default=False,
@@ -130,19 +139,8 @@ class Plant (UserMixin, models.Model):
         null=False,
         blank=True,
         # zgoda na przesłanie pustego form
-        verbose_name = "Blooming?"
+        verbose_name="Blooming?"
     )
-
-    dificulty = models.PositiveIntegerField (
-        choices = DIFFICULTY_CHOICES,
-        default=1,
-        null=False,
-        blank=True,
-        verbose_name="Cultivation difficulty level",
-        help_text = "",
-
-    )
-
     DIFFICULTY_CHOICES = [
         (1, "Low"),
         (2, "Medium-low"),
@@ -150,6 +148,16 @@ class Plant (UserMixin, models.Model):
         (4, "Medium-high"),
         (5, "High"),
     ]
+    difficulty = models.PositiveIntegerField(
+        choices=DIFFICULTY_CHOICES,
+        default=1,
+        null=False,
+        blank=True,
+        verbose_name="Cultivation difficulty level",
+        help_text="",
+
+    )
+
     # user = models.ForeignKey (
     #     settings.AUTH_USER_MODEL,
     #     on_delete=models.PROTECT,
@@ -158,64 +166,60 @@ class Plant (UserMixin, models.Model):
     #     verbose_name="User",
     #     help_text="",
     # )----- userMixin
-class Room(UserMixin, models.Model):
-    name = models.CharField(
-        max_length = 50,
+
+
+class Room(NameDescriptionMixin, UserMixin,  models.Model):
+
+    # name
+    # description
+
+    EXPOSURE_CHOICES = Plant.EXPOSURE_CHOICES
+    # + [('','')   rozszerzenie]
+    # Exposurechoice[-1]   wywali element z klasy wyżej - referncjonowanie
+    exposure = models.CharField(
+        max_length=10,
+        choices=EXPOSURE_CHOICES,
         null=False,
-        blank = False,
-        verbose_name="Room_name",
+        blank=False,
+        verbose_name="Amount of sun",
         help_text="",
     )
 
-    ROOMEXPOSURE_CHOICES = [ ("dark", "Dark room"),
-        ("shade","Shady room"),
-        ("partsun", "Partsunny room"),
-        ("fullsun", "Sunny room"),
-        ]
-
-    room_exposure = models.CharField (
-        max_length = 20,
-        choices = ROOMEXPOSURE_CHOICES,
+    HUMIDITY_CHOICES = Plant.HUMIDITY_CHOICES
+    humidity = models.CharField(
+        max_length=10,
+        choices=HUMIDITY_CHOICES,
         null=False,
         blank=False,
-        verbose_name="Room exposure",
+        verbose_name="Humidity",
         help_text="",
     )
-    ROOMTEMP_CHOICES = [ ("cold", "Cold"),
-        ("medium","Medium"),
-        ("warm", "Warm"),
-        ]
-        # Plant.TEMPERATURE_CHOICES
 
-    room_temperature = models.CharField (
-        max_length = 20,
-        choices = ROOMTEMP_CHOICES,
+    TEMPERATURE_CHOICES = Plant.TEMPERATURE_CHOICES
+    temperature = models.CharField(
+        max_length=10,
+        choices=TEMPERATURE_CHOICES,
         null=False,
         blank=False,
-        verbose_name = "Room temperature",
-        help_text = "",
+        verbose_name="Temperature",
+        help_text="",
     )
-
-
 
     drafty = models.BooleanField(
         default=False,
         null=False,
-        blank=False,
-        verbose_name = "Drafty"
-    )
-
-
-class UserPlant(Plant,models.Model):
-    name = models.CharField(
-        max_length = 50,
-        null=False,
-        blank = False,
-        verbose_name="Plant_name",
+        blank=True,
+        verbose_name="Drafty?",
         help_text="",
     )
 
-    room = models.ForeignKey (
+
+class UserPlant(ImageMixin, NameDescriptionMixin, UserMixin, models.Model):
+
+    # name
+    # description
+
+    room = models.ForeignKey(
         Room,
         on_delete=models.PROTECT,
         null=False,
@@ -223,36 +227,33 @@ class UserPlant(Plant,models.Model):
         verbose_name="Room",
         help_text="",
     )
-    plant = models.ForeignKey (
+
+    plant = models.ForeignKey(
         Plant,
         on_delete=models.PROTECT,
         null=False,
         blank=False,
-        verbose_name=" Plant origin",
+        verbose_name="Type of plant",
         help_text="",
     )
 
-
-    description=models.CharField(
-        max_length = 200,
+    last_watered = models.DateTimeField(
+        null=True,
+        # nie był wczesniej podlany
         blank=True,
-        verbose_name = "Description",
+        verbose_name="Timestamp of last watering",
         help_text="",
         )
+    last_fertilized = models.DateTimeField(
+        null=True,
+        # nie był wczesniej podlany
+        blank=True,
+        verbose_name="Timestamp of last fertilizing",
+        help_text="",
+        )
+    # image_url
 
-    watering_date = models.DateField(
-        null=False,
-        blank=False,
-        verbose_name="Watering date",
-        help_text="",
-        )
 
-    fertilizing_date = models.DateField(
-        null=False,
-        blank=False,
-        verbose_name="Fertilizing date",
-        help_text="",
-        )
 
 
 
